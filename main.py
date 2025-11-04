@@ -15,7 +15,6 @@ FEEDS = [
     "https://evilgodfahim.github.io/ps/combined.xml",
     "https://evilgodfahim.github.io/eco/combined.xml",
     "https://www.eiu.com/n/feed/",
-
 "https://www.lowyinstitute.org/the-interpreter/rss.xml "
 ]
 
