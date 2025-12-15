@@ -15,7 +15,8 @@ FEEDS = [
     "https://evilgodfahim.github.io/ps/combined.xml",
     "https://www.eiu.com/n/feed/",
 "https://www.lowyinstitute.org/the-interpreter/rss.xml ",
-"https://feeds.feedburner.com/AtlanticInternational"
+"https://feeds.feedburner.com/AtlanticInternational",
+"https://evilgodfahim.github.io/eco/combined.xml"
 ]
 
 MASTER_FILE = "feed_master.xml"
