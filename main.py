@@ -13,10 +13,12 @@ FEEDS = [
     "https://www.foreignaffairs.com/rss.xml",
     "https://foreignpolicy.com/feed/",
     "https://evilgodfahim.github.io/ps/combined.xml",
-    "https://www.eiu.com/n/feed/",
-"https://www.lowyinstitute.org/the-interpreter/rss.xml ",
-"https://feeds.feedburner.com/AtlanticInternational",
-"https://evilgodfahim.github.io/eco/combined.xml"
+"https://evilgodfahim.github.io/eco/combined.xml",
+"https://www.defenseone.com/rss/all/",
+"https://www.spytalk.co/feed/",
+"https://rusi.org/rss/latest-publications.xml",
+"https://www.bellingcat.com/feed/",
+"https://www.thecipherbrief.com/feed"
 ]
 
 MASTER_FILE = "feed_master.xml"
