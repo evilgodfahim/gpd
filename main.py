@@ -125,39 +125,52 @@ def update_master():
 # -----------------------------
 def update_daily():
     print("[Updating daily_feed.xml]")
-    from_zone = timezone.utc
     to_zone = timezone(timedelta(hours=BD_OFFSET))
 
-    # Load last seen
+    # Load last seen timestamp
+    last_seen_dt = None
     if os.path.exists(LAST_SEEN_FILE):
         with open(LAST_SEEN_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
             last_seen = data.get("last_seen")
             if last_seen:
                 last_seen_dt = datetime.fromisoformat(last_seen)
-            else:
-                last_seen_dt = None
-    else:
-        last_seen_dt = None
 
-    # 48-hour cutoff
+    # Calculate 48-hour cutoff in BD timezone
     now_bd = datetime.now(to_zone)
     cutoff_48h = now_bd - timedelta(hours=48)
 
+    # Load master feed
     master_items = load_existing(MASTER_FILE)
+    
+    # Filter items: within 48 hours AND newer than last_seen (with deduplication)
     new_items = []
-    seen_links = set()  # Deduplication
+    seen_links = set()
 
     for item in master_items:
         pub = item["pubDate"].astimezone(to_zone)
         link = item["link"]
         
-        # Include if: within 48 hours AND (newer than last_seen OR first run) AND not duplicate
-        if pub > cutoff_48h and link not in seen_links:
-            if last_seen_dt is None or pub > last_seen_dt:
-                new_items.append(item)
-                seen_links.add(link)
+        # Skip if duplicate
+        if link in seen_links:
+            continue
+            
+        # Must be within 48 hours
+        if pub <= cutoff_48h:
+            continue
+            
+        # Must be newer than last_seen (if exists)
+        if last_seen_dt and pub <= last_seen_dt:
+            continue
+        
+        # Add to results
+        new_items.append(item)
+        seen_links.add(link)
 
+    # Sort by date (newest first)
+    new_items.sort(key=lambda x: x["pubDate"], reverse=True)
+
+    # Handle empty results
     if not new_items:
         new_items = [{
             "title": "No new articles in the last 48 hours",
@@ -165,16 +178,20 @@ def update_daily():
             "description": "Daily feed will populate when new articles appear.",
             "pubDate": datetime.now(timezone.utc)
         }]
+        write_rss(new_items, DAILY_FILE, title="Daily Feed (Last 48 Hours, Updated 9 AM BD)")
+        print(f"✅ daily_feed.xml updated - no new articles")
+        return
 
+    # Write RSS feed
     write_rss(new_items, DAILY_FILE, title="Daily Feed (Last 48 Hours, Updated 9 AM BD)")
 
-    # Save last seen (only if we had real items)
-    if new_items and new_items[0]["link"] != "https://evilgodfahim.github.io/":
-        last_dt = max([i["pubDate"] for i in new_items])
-        with open(LAST_SEEN_FILE, "w", encoding="utf-8") as f:
-            json.dump({"last_seen": last_dt.isoformat()}, f)
+    # Update last_seen to the newest article timestamp
+    newest_dt = max([i["pubDate"] for i in new_items])
+    with open(LAST_SEEN_FILE, "w", encoding="utf-8") as f:
+        json.dump({"last_seen": newest_dt.isoformat()}, f)
 
-    print(f"✅ daily_feed.xml updated with {len(new_items)} items")
+    print(f"✅ daily_feed.xml updated with {len(new_items)} new articles")
+    print(f"   Latest article: {newest_dt.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 # -----------------------------
 # MAIN
