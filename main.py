@@ -4,6 +4,7 @@ import sys
 from datetime import datetime, timezone, timedelta
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+import json
 
 # -----------------------------
 # CONFIGURATION
@@ -13,12 +14,12 @@ FEEDS = [
     "https://www.foreignaffairs.com/rss.xml",
     "https://foreignpolicy.com/feed/",
     "https://evilgodfahim.github.io/ps/combined.xml",
-"https://evilgodfahim.github.io/eco/combined.xml",
-"https://www.defenseone.com/rss/all/",
-"https://www.spytalk.co/feed/",
-"https://rusi.org/rss/latest-publications.xml",
-"https://www.bellingcat.com/feed/",
-"https://www.thecipherbrief.com/feed"
+    "https://evilgodfahim.github.io/eco/combined.xml",
+    "https://www.defenseone.com/rss/all/",
+    "https://www.spytalk.co/feed/",
+    "https://rusi.org/rss/latest-publications.xml",
+    "https://www.bellingcat.com/feed/",
+    "https://www.thecipherbrief.com/feed"
 ]
 
 MASTER_FILE = "feed_master.xml"
@@ -27,8 +28,6 @@ LAST_SEEN_FILE = "last_seen.json"
 
 MAX_ITEMS = 500
 BD_OFFSET = 6  # Bangladesh UTC offset
-
-import json
 
 # -----------------------------
 # UTILITIES
@@ -141,27 +140,39 @@ def update_daily():
     else:
         last_seen_dt = None
 
+    # 48-hour cutoff
+    now_bd = datetime.now(to_zone)
+    cutoff_48h = now_bd - timedelta(hours=48)
+
     master_items = load_existing(MASTER_FILE)
     new_items = []
+    seen_links = set()  # Deduplication
+
     for item in master_items:
         pub = item["pubDate"].astimezone(to_zone)
-        if not last_seen_dt or pub > last_seen_dt:
-            new_items.append(item)
+        link = item["link"]
+        
+        # Include if: within 48 hours AND (newer than last_seen OR first run) AND not duplicate
+        if pub > cutoff_48h and link not in seen_links:
+            if last_seen_dt is None or pub > last_seen_dt:
+                new_items.append(item)
+                seen_links.add(link)
 
     if not new_items:
         new_items = [{
-            "title": "No new articles today",
+            "title": "No new articles in the last 48 hours",
             "link": "https://evilgodfahim.github.io/",
-            "description": "Daily feed will populate after first articles appear.",
+            "description": "Daily feed will populate when new articles appear.",
             "pubDate": datetime.now(timezone.utc)
         }]
 
-    write_rss(new_items, DAILY_FILE, title="Daily Feed (Updated 9 AM BD)")
+    write_rss(new_items, DAILY_FILE, title="Daily Feed (Last 48 Hours, Updated 9 AM BD)")
 
-    # Save last seen
-    last_dt = max([i["pubDate"] for i in new_items])
-    with open(LAST_SEEN_FILE, "w", encoding="utf-8") as f:
-        json.dump({"last_seen": last_dt.isoformat()}, f)
+    # Save last seen (only if we had real items)
+    if new_items and new_items[0]["link"] != "https://evilgodfahim.github.io/":
+        last_dt = max([i["pubDate"] for i in new_items])
+        with open(LAST_SEEN_FILE, "w", encoding="utf-8") as f:
+            json.dump({"last_seen": last_dt.isoformat()}, f)
 
     print(f"✅ daily_feed.xml updated with {len(new_items)} items")
 
