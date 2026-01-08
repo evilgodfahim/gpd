@@ -2,7 +2,7 @@ name: Daily Feed
 
 on:
   schedule:
-    - cron: "30 2 * * *"       # 5:30 AM Bangladesh Time = 5:30 AM UTC
+    - cron: "0 3 * * *"        # 9:00 AM Bangladesh Time (UTC+6) = 3:00 AM UTC
   workflow_dispatch:           # Manual trigger anytime
 
 jobs:
@@ -20,16 +20,20 @@ jobs:
       - name: Install dependencies
         run: pip install feedparser
 
+      - name: Ensure files exist before running
+        run: |
+          if [ ! -f last_seen.json ]; then
+            echo '{"last_seen": null}' > last_seen.json
+          fi
+
       - name: Run main.py (daily only)
         run: python main.py --daily-only
 
-      - name: Ensure daily_feed.xml and last_seen.json exist
+      - name: Verify daily_feed.xml was created
         run: |
           if [ ! -f daily_feed.xml ]; then
-            echo '<rss version="2.0"><channel><title>Daily Feed</title></channel></rss>' > daily_feed.xml
-          fi
-          if [ ! -f last_seen.json ]; then
-            echo '{"last_seen": null}' > last_seen.json
+            echo "ERROR: daily_feed.xml was not created by script"
+            exit 1
           fi
 
       - name: Commit & push daily feed
@@ -40,6 +44,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Auto update daily feed"
+            git commit -m "Auto update daily feed [$(date +'%Y-%m-%d %H:%M:%S UTC')]"
             git push
           fi
