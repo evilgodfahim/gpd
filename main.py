@@ -127,14 +127,12 @@ def update_daily():
     print("[Updating daily_feed.xml]")
     to_zone = timezone(timedelta(hours=BD_OFFSET))
 
-    # Load last seen timestamp
-    last_seen_dt = None
+    # Load seen links
+    seen_links_previous = set()
     if os.path.exists(LAST_SEEN_FILE):
         with open(LAST_SEEN_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-            last_seen = data.get("last_seen")
-            if last_seen:
-                last_seen_dt = datetime.fromisoformat(last_seen)
+            seen_links_previous = set(data.get("seen_links", []))
 
     # Calculate 48-hour cutoff in BD timezone
     now_bd = datetime.now(to_zone)
@@ -143,29 +141,21 @@ def update_daily():
     # Load master feed
     master_items = load_existing(MASTER_FILE)
     
-    # Filter items: within 48 hours AND newer than last_seen (with deduplication)
+    # Filter items: within 48 hours AND not previously seen
     new_items = []
-    seen_links = set()
+    all_current_links = set()
 
     for item in master_items:
         pub = item["pubDate"].astimezone(to_zone)
         link = item["link"]
         
-        # Skip if duplicate
-        if link in seen_links:
-            continue
+        # Track all links within 48 hours
+        if pub > cutoff_48h:
+            all_current_links.add(link)
             
-        # Must be within 48 hours
-        if pub <= cutoff_48h:
-            continue
-            
-        # Must be newer than last_seen (if exists)
-        if last_seen_dt and pub <= last_seen_dt:
-            continue
-        
-        # Add to results
-        new_items.append(item)
-        seen_links.add(link)
+            # Add to new_items if not previously seen
+            if link not in seen_links_previous:
+                new_items.append(item)
 
     # Sort by date (newest first)
     new_items.sort(key=lambda x: x["pubDate"], reverse=True)
@@ -180,18 +170,14 @@ def update_daily():
         }]
         write_rss(new_items, DAILY_FILE, title="Daily Feed (Last 48 Hours, Updated 9 AM BD)")
         print(f"✅ daily_feed.xml updated - no new articles")
-        return
+    else:
+        # Write RSS feed
+        write_rss(new_items, DAILY_FILE, title="Daily Feed (Last 48 Hours, Updated 9 AM BD)")
+        print(f"✅ daily_feed.xml updated with {len(new_items)} new articles")
 
-    # Write RSS feed
-    write_rss(new_items, DAILY_FILE, title="Daily Feed (Last 48 Hours, Updated 9 AM BD)")
-
-    # Update last_seen to the newest article timestamp
-    newest_dt = max([i["pubDate"] for i in new_items])
+    # Save all current links within 48-hour window
     with open(LAST_SEEN_FILE, "w", encoding="utf-8") as f:
-        json.dump({"last_seen": newest_dt.isoformat()}, f)
-
-    print(f"✅ daily_feed.xml updated with {len(new_items)} new articles")
-    print(f"   Latest article: {newest_dt.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        json.dump({"seen_links": list(all_current_links)}, f, indent=2)
 
 # -----------------------------
 # MAIN
