@@ -11,6 +11,8 @@ import json
 # -----------------------------
 FEEDS = [
     "https://thediplomat.com/feed/",
+"https://politepaul.com/fd/M8QukWfUPWR4.xml",
+"https://politepaul.com/fd/BI4f9BiCvoed.xml",
     "https://www.foreignaffairs.com/rss.xml",
     "https://foreignpolicy.com/feed/",
     "https://evilgodfahim.github.io/ps/combined.xml",
