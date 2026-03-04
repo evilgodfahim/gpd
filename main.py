@@ -15,13 +15,7 @@ FEEDS = [
 "https://politepaul.com/fd/BI4f9BiCvoed.xml",
     "https://www.foreignaffairs.com/rss.xml",
     "https://foreignpolicy.com/feed/",
-    "https://evilgodfahim.github.io/ps/combined.xml",
-    "https://evilgodfahim.github.io/eco/combined.xml",
-    "https://www.defenseone.com/rss/all/",
-    "https://www.spytalk.co/feed/",
-    "https://rusi.org/rss/latest-publications.xml",
-    "https://www.bellingcat.com/feed/",
-    "https://www.thecipherbrief.com/feed"
+    "https://evilgodfahim.github.io/ps/combined.xml"
 ]
 
 MASTER_FILE = "feed_master.xml"
