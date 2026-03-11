@@ -13,7 +13,8 @@ FEEDS = [
     "https://thediplomat.com/feed/",
     "https://www.foreignaffairs.com/rss.xml",
     "https://foreignpolicy.com/feed/",
-    "https://evilgodfahim.github.io/ps/combined.xml"
+    "https://evilgodfahim.github.io/ps/combined.xml",
+"https://evilgodfahim.github.io/eco/combined.xml"
 ]
 
 MASTER_FILE = "feed_master.xml"
