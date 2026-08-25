@@ -10,7 +10,7 @@ import json
 # CONFIGURATION
 # -----------------------------
 FEEDS = [
-    "https://thediplomat.com/feed/",
+    "https://evilgodfahim.github.io/diplo/combined.xml",
     "https://www.foreignaffairs.com/rss.xml",
     "https://foreignpolicy.com/feed/",
     "https://evilgodfahim.github.io/ps/combined.xml",
